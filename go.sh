@@ -23,10 +23,6 @@ case $key in
     LOCAL="$2"
     shift
     ;;
-    --nosystemintegration)
-    NOSYSINT="1"
-    shift
-    ;;
     *)
             # unknown option
     ;;
@@ -136,21 +132,19 @@ unzip "/tmp/v2ray/v2ray.zip" -d "/tmp/v2ray/"
 # Create folder for V2Ray log.
 mkdir -p /var/log/v2ray
 
-if [[ "$NOSYSINT" != "1" ]]; then
-  # Stop v2ray daemon if necessary.
-  SYSTEMCTL_CMD=$(command -v systemctl)
-  SERVICE_CMD=$(command -v service)
+# Stop v2ray daemon if necessary.
+SYSTEMCTL_CMD=$(command -v systemctl)
+SERVICE_CMD=$(command -v service)
 
-  if [ ${V2RAY_RUNNING} -eq 1 ]; then
-    echo "Shutting down V2Ray service."
-    if [ -n "${SYSTEMCTL_CMD}" ]; then
-      if [ -f "/lib/systemd/system/v2ray.service" ]; then
-        ${SYSTEMCTL_CMD} stop v2ray
-      fi
-    elif [ -n "${SERVICE_CMD}" ]; then
-      if [ -f "/etc/init.d/v2ray" ]; then
-        ${SERVICE_CMD} v2ray stop
-      fi
+if [ ${V2RAY_RUNNING} -eq 1 ]; then
+  echo "Shutting down V2Ray service."
+  if [ -n "${SYSTEMCTL_CMD}" ]; then
+    if [ -f "/lib/systemd/system/v2ray.service" ]; then
+      ${SYSTEMCTL_CMD} stop v2ray
+    fi
+  elif [ -n "${SERVICE_CMD}" ]; then
+    if [ -f "/etc/init.d/v2ray" ]; then
+      ${SERVICE_CMD} v2ray stop
     fi
   fi
 fi
@@ -175,28 +169,26 @@ if [ ! -f "/etc/v2ray/config.json" ]; then
   echo "UUID:${UUID}"
 fi
 
-if [[ "$NOSYSINT" != "1" ]]; then
-  if [ -n "${SYSTEMCTL_CMD}" ]; then
-    if [ ! -f "/lib/systemd/system/v2ray.service" ]; then
-      cp "/tmp/v2ray/v2ray-${VER}-linux-${VDIS}/systemd/v2ray.service" "/lib/systemd/system/"
-      systemctl enable v2ray
-    else
-      if [ ${V2RAY_RUNNING} -eq 1 ]; then
-        echo "Restarting V2Ray service."
-        ${SYSTEMCTL_CMD} start v2ray
-      fi
+if [ -n "${SYSTEMCTL_CMD}" ]; then
+  if [ ! -f "/lib/systemd/system/v2ray.service" ]; then
+    cp "/tmp/v2ray/v2ray-${VER}-linux-${VDIS}/systemd/v2ray.service" "/lib/systemd/system/"
+    systemctl enable v2ray
+  else
+    if [ ${V2RAY_RUNNING} -eq 1 ]; then
+      echo "Restarting V2Ray service."
+      ${SYSTEMCTL_CMD} start v2ray
     fi
-  elif [ -n "${SERVICE_CMD}" ]; then # Configure SysV if necessary.
-    if [ ! -f "/etc/init.d/v2ray" ]; then
-      install_component "daemon"
-      cp "/tmp/v2ray/v2ray-${VER}-linux-${VDIS}/systemv/v2ray" "/etc/init.d/v2ray"
-      chmod +x "/etc/init.d/v2ray"
-      update-rc.d v2ray defaults
-    else
-      if [ ${V2RAY_RUNNING} -eq 1 ]; then
-        echo "Restarting V2Ray service."
-        ${SERVICE_CMD} v2ray start
-      fi
+  fi
+elif [ -n "${SERVICE_CMD}" ]; then # Configure SysV if necessary.
+  if [ ! -f "/etc/init.d/v2ray" ]; then
+    install_component "daemon"
+    cp "/tmp/v2ray/v2ray-${VER}-linux-${VDIS}/systemv/v2ray" "/etc/init.d/v2ray"
+    chmod +x "/etc/init.d/v2ray"
+    update-rc.d v2ray defaults
+  else
+    if [ ${V2RAY_RUNNING} -eq 1 ]; then
+      echo "Restarting V2Ray service."
+      ${SERVICE_CMD} v2ray start
     fi
   fi
 fi
