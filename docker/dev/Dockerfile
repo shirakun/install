@@ -6,7 +6,6 @@ RUN mkdir /usr/bin/v2ray/
 RUN mkdir /etc/v2ray/
 RUN mkdir /var/log/v2ray/
 RUN go get -u v2ray.com/core/...
-RUN go generate v2ray.com/core/...
 RUN go install v2ray.com/core/tools/build
 RUN build -dir /usr/bin/v2ray
 
